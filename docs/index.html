@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickSnip — Text expansion that just works</title>
+  <meta name="description" content="A free, fast, no-subscription Mac app that expands your text shortcuts instantly. Import your existing snippets and go." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f0f11;
+      --surface:  #1a1a1f;
+      --border:   #2a2a32;
+      --accent:   #f5a623;
+      --text:     #e8e8ec;
+      --muted:    #888899;
+      --radius:   12px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+    .nav-logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 28px; color: var(--muted); font-size: 15px; }
+    .nav-links a { color: var(--muted); }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    /* ── Hero ── */
+    .hero {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 100px 24px 80px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(245,166,35,.12);
+      color: var(--accent);
+      border: 1px solid rgba(245,166,35,.3);
+      border-radius: 100px;
+      padding: 5px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+    h1 {
+      font-size: clamp(36px, 6vw, 62px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+    h1 em { color: var(--accent); font-style: normal; }
+    .subhead {
+      font-size: clamp(17px, 2.5vw, 21px);
+      color: var(--muted);
+      max-width: 540px;
+      margin: 0 auto 44px;
+    }
+    .cta-group { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; text-decoration: none; }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-ghost   { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .req { margin-top: 14px; font-size: 13px; color: var(--muted); }
+
+    /* ── Demo bar ── */
+    .demo-wrap {
+      max-width: 640px;
+      margin: 0 auto 100px;
+      padding: 0 24px;
+    }
+    .demo-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .demo-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .demo-row:last-child { border-bottom: none; }
+    .demo-abbr  { color: var(--accent); font-weight: 700; min-width: 90px; }
+    .demo-arrow { color: var(--muted); }
+    .demo-exp   { color: var(--text); }
+
+    /* ── Features ── */
+    .features {
+      max-width: 960px;
+      margin: 0 auto 100px;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+    }
+    .feature-icon { font-size: 28px; margin-bottom: 14px; }
+    .feature h3   { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .feature p    { font-size: 15px; color: var(--muted); line-height: 1.55; }
+
+    /* ── Migrating ── */
+    .migrate {
+      max-width: 680px;
+      margin: 0 auto 100px;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .migrate h2 { font-size: 30px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 16px; }
+    .migrate p  { color: var(--muted); margin-bottom: 32px; font-size: 17px; }
+    .steps {
+      text-align: left;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .step { display: flex; gap: 16px; align-items: flex-start; }
+    .step-num {
+      background: rgba(245,166,35,.15);
+      color: var(--accent);
+      border-radius: 50%;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step p    { font-size: 15px; color: var(--text); }
+    .step code {
+      background: rgba(255,255,255,.07);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    /* ── Pricing ── */
+    .pricing {
+      max-width: 480px;
+      margin: 0 auto 100px;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .price-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 44px 32px;
+    }
+    .price-amount {
+      font-size: 72px;
+      font-weight: 900;
+      letter-spacing: -3px;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .price-note { color: var(--muted); font-size: 15px; margin-bottom: 28px; }
+    .price-features { list-style: none; text-align: left; margin-bottom: 32px; }
+    .price-features li {
+      padding: 7px 0;
+      font-size: 15px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .price-features li:last-child { border-bottom: none; }
+    .price-features li::before { content: "✓  "; color: var(--accent); font-weight: 700; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 32px 24px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    footer a { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-logo">Quick<span>Snip</span></div>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#migrate">Migrate</a>
+    <a href="https://github.com/jbnash/quicksnip">GitHub</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="badge">Free · Open Source · macOS</div>
+  <h1>Text expansion<br/>that <em>just works.</em></h1>
+  <p class="subhead">
+    Type a short abbreviation, get a long chunk of text — instantly, in any app.
+    No subscription. No account. No cloud. Just your Mac doing what it's always been good at.
+  </p>
+  <div class="cta-group">
+    <a class="btn btn-primary" href="https://github.com/jbnash/quicksnip/releases/latest/download/QuickSnip.zip">
+      ⬇ Download for Mac
+    </a>
+    <a class="btn btn-ghost" href="https://github.com/jbnash/quicksnip">
+      View on GitHub
+    </a>
+  </div>
+  <p class="req">macOS 13 or later &nbsp;·&nbsp; Apple Silicon &amp; Intel &nbsp;·&nbsp; Free forever</p>
+</section>
+
+<!-- Demo -->
+<div class="demo-wrap">
+  <div class="demo-box">
+    <div class="demo-row">
+      <span class="demo-abbr">ddate</span>
+      <span class="demo-arrow">→</span>
+      <span class="demo-exp">April 8, 2026</span>
+    </div>
+    <div class="demo-row">
+      <span class="demo-abbr">llmkif</span>
+      <span class="demo-arrow">→</span>
+      <span class="demo-exp">Let me know if you have any questions.</span>
+    </div>
+    <div class="demo-row">
+      <span class="demo-abbr">rregards</span>
+      <span class="demo-arrow">→</span>
+      <span class="demo-exp">Best regards,</span>
+    </div>
+    <div class="demo-row">
+      <span class="demo-abbr">ffup</span>
+      <span class="demo-arrow">→</span>
+      <span class="demo-exp">I wanted to follow up on my previous message.</span>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<section id="how">
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">⚡</div>
+      <h3>Instant</h3>
+      <p>Fires the moment you finish typing your abbreviation — no delimiter, no delay. It just disappears and your full text appears.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📴</div>
+      <h3>Completely offline</h3>
+      <p>Everything runs on your Mac. Your snippets never leave your machine. No account, no sync service, no privacy policy to read.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">📅</div>
+      <h3>Smart date codes</h3>
+      <p>Use <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px;font-size:13px;">%B %e, %Y</code> in any snippet to insert today's date. Time, weekday, ISO format — all supported.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔤</div>
+      <h3>Rich text support</h3>
+      <p>Formatted snippets with bold, italics, and fonts paste perfectly — not just plain text.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔍</div>
+      <h3>Searchable library</h3>
+      <p>Browse and search all your snippets in one window. Double-click any row to paste it wherever your cursor is.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🆓</div>
+      <h3>Free. Forever.</h3>
+      <p>No trial, no tier, no "upgrade to unlock." It's a Mac app. You download it and it works.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Migrate -->
+<section id="migrate" class="migrate">
+  <h2>Already have snippets?<br/>Bring them with you.</h2>
+  <p>QuickSnip reads your existing <strong>.textexpbackup</strong> files directly — no export, no conversion, no copy-paste. Every abbreviation you've built up over the years comes right over.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <p>Download and open QuickSnip. It comes loaded with a starter set so you're useful immediately.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <p>Click <code>⚡ → Load Backup File…</code> and point it at your <code>.textexpbackup</code> file.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <p>Grant Accessibility permission once in System Settings so QuickSnip can watch for your abbreviations.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <p>Type any abbreviation, anywhere. Done.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing">
+  <div class="price-box">
+    <div class="price-amount">$0</div>
+    <p class="price-note">No monthly fee. No annual fee. No fee.</p>
+    <ul class="price-features">
+      <li>Unlimited snippets</li>
+      <li>Plain text &amp; rich text</li>
+      <li>Date &amp; time macros</li>
+      <li>Import from .textexpbackup</li>
+      <li>Works in every app</li>
+      <li>Open source</li>
+    </ul>
+    <a class="btn btn-primary" style="width:100%;justify-content:center;"
+       href="https://github.com/jbnash/quicksnip/releases/latest/download/QuickSnip.zip">
+      ⬇ Download QuickSnip
+    </a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>QuickSnip is open source — <a href="https://github.com/jbnash/quicksnip">view the code on GitHub</a>.</p>
+  <p style="margin-top:8px;">Made for people who just want their text shortcuts back.</p>
+</footer>
+
+</body>
+</html>

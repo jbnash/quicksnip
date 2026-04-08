@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>QuickSnip</string>
+    <key>CFBundleDisplayName</key>
+    <string>QuickSnip</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.johnnash.quicksnip</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleExecutable</key>
+    <string>QuickSnip</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <!-- Hides the app from the Dock — menu bar only -->
+    <key>LSUIElement</key>
+    <true/>
+    <!-- Required for CGEventTap to function -->
+    <key>NSAccessibilityUsageDescription</key>
+    <string>QuickSnip monitors keystrokes to automatically expand your text abbreviations, just like the original TextExpander.</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSSupportsAutomaticTermination</key>
+    <false/>
+    <key>NSSupportsSuddenTermination</key>
+    <false/>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>

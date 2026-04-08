@@ -1,0 +1,30 @@
+============================
+QUICKSNIP — REBUILD COMMANDS
+============================
+
+Run these two commands in Terminal after making any changes:
+
+  cd "/Users/johnnash/Library/Mobile Documents/com~apple~CloudDocs/1. Projects/Text Expander Clone"
+  bash build.sh && cp -r QuickSnip.app /Applications/
+
+Then quit and reopen QuickSnip from /Applications.
+
+You do NOT need to re-grant Accessibility permission after rebuilding.
+
+============================
+FIRST-TIME SETUP (new Mac)
+============================
+
+1. Run the two commands above
+2. Open /Applications/QuickSnip.app  (right-click → Open if blocked)
+3. System Settings → Privacy & Security → Accessibility → add QuickSnip → toggle ON
+4. Click ⚡ in menu bar → Restart Monitoring
+5. Click ⚡ → Load Backup File → choose your .textexpbackup file
+
+============================
+SHARING WITH SOMEONE ELSE
+============================
+
+Send them:  /Applications/QuickSnip.app  (zip it first)
+They follow the First-Time Setup steps above.
+Include StarterSnippets.textexpbackup if they don't have their own snippets.
