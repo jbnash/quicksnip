@@ -211,6 +211,18 @@
     .price-features li:last-child { border-bottom: none; }
     .price-features li::before { content: "✓  "; color: var(--accent); font-weight: 700; }
 
+    /* ── Privacy ── */
+    .privacy-page {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 80px 24px 100px;
+    }
+    .privacy-page h1 { font-size: 36px; font-weight: 800; letter-spacing: -.5px; margin-bottom: 8px; }
+    .privacy-page .updated { color: var(--muted); font-size: 14px; margin-bottom: 48px; }
+    .privacy-page h2 { font-size: 19px; font-weight: 700; margin: 36px 0 10px; }
+    .privacy-page p  { color: var(--muted); font-size: 16px; line-height: 1.7; }
+    .privacy-page a  { color: var(--accent); }
+
     /* ── Footer ── */
     footer {
       border-top: 1px solid var(--border);
@@ -357,13 +369,13 @@
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <p><strong>One-time fix for macOS:</strong> Open Terminal (press ⌘Space, type Terminal) and run:<br/>
-      <code>xattr -cr /Applications/QuickSnip.app</code><br/>
-      Then open the app normally. This removes a security flag macOS puts on apps downloaded from the internet. You only do this once.</p>
+      <p><strong>Important — do this before opening the app.</strong> macOS will say the app is "damaged" if you skip this step. Open Terminal (press ⌘Space, type Terminal) and run:</p>
+      <div style="background:rgba(0,0,0,.35);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:14px 18px;margin:12px 0;font-family:'SF Mono','Fira Code',monospace;font-size:14px;color:var(--accent);">xattr -cr /Applications/QuickSnip.app</div>
+      <p>Then open the app normally. This removes a security flag macOS puts on downloaded apps. You only need to do it once.</p>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <p>Go to <strong>System Settings → Privacy &amp; Security → Accessibility</strong>, click <strong>+</strong>, add QuickSnip, and toggle it <strong>on</strong>. Then click ⚡ → Restart Monitoring.</p>
+      <p>Go to <strong>System Settings → Privacy &amp; Security → Accessibility</strong>, click <strong>+</strong>, add QuickSnip, and toggle it <strong>on</strong>. Then look at the <strong>top of your screen in the menu bar</strong> — you'll see a ⚡ icon. Click it → <strong>Restart Monitoring</strong>.</p>
     </div>
     <div class="step">
       <div class="step-num">4</div>
@@ -380,7 +392,7 @@
 <section class="pricing">
   <div class="price-box">
     <div class="price-amount">$0</div>
-    <p class="price-note">Free during beta &nbsp;·&nbsp; $4.95/year when we launch</p>
+    <p class="price-note">Free during beta &nbsp;·&nbsp; $9.95/year when we launch</p>
     <ul class="price-features">
       <li>Unlimited snippets</li>
       <li>Plain text &amp; rich text</li>
@@ -396,19 +408,30 @@
   </div>
 </section>
 
-<!-- Feedback -->
-<section style="max-width:640px;margin:0 auto 100px;padding:0 24px;text-align:center;">
-  <h2 style="font-size:28px;font-weight:800;letter-spacing:-.5px;margin-bottom:12px;">Tell us what you think</h2>
-  <p style="color:#888899;margin-bottom:32px;">QuickSnip is free and we want to keep making it better. 2 minutes, no email required.</p>
-  <!-- REPLACE THIS with your Tally embed code -->
-  <a class="btn btn-ghost" style="display:inline-flex;" href="https://tally.so/REPLACE_WITH_YOUR_FORM_ID">
-    Share feedback →
-  </a>
+<!-- Privacy Policy -->
+<section id="privacy" class="privacy-page">
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: April 9, 2026</p>
+
+  <h2>What information we collect</h2>
+  <p>QuickSnip stores only the text snippets and abbreviations you create, and your on/off preference. This data is saved locally on your device using Chrome's built-in <code style="background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-size:14px;">chrome.storage.local</code> API. We do not collect any usage data, analytics, or personal information.</p>
+
+  <h2>How we use the information</h2>
+  <p>Your snippets are used solely to expand abbreviations when you type them into text fields in your browser. No other use is made of this data.</p>
+
+  <h2>What information we share</h2>
+  <p>We share nothing. QuickSnip does not collect, transmit, or share any data with any server, third party, or developer. All data stays entirely on your device.</p>
+
+  <h2>Data retention and deletion</h2>
+  <p>Your snippets remain on your device until you delete them within the extension or uninstall the extension entirely.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this privacy policy? Email <a href="mailto:jbnash@gmail.com">jbnash@gmail.com</a>.</p>
 </section>
 
 <!-- Footer -->
 <footer>
-  <p>Built by <a href="https://github.com/jbnash">John Nash</a> &nbsp;·&nbsp; <a href="https://github.com/jbnash/quicksnip">Open source on GitHub</a></p>
+  <p>Built by <a href="https://github.com/jbnash">John Nash</a> &nbsp;·&nbsp; <a href="https://github.com/jbnash/quicksnip">Open source on GitHub</a> &nbsp;·&nbsp; <a href="#privacy">Privacy Policy</a></p>
   <p style="margin-top:8px;">Made for people who just want their text shortcuts back. &nbsp;·&nbsp; Beta is free. Launch price: $4.95/year.</p>
 </footer>
 
