@@ -19,9 +19,16 @@
 
 1. [Download QuickSnip.zip](https://github.com/jbnash/quicksnip/releases/latest/download/QuickSnip.zip)
 2. Unzip and move `QuickSnip.app` to your `/Applications` folder
-3. Right-click → **Open** (first launch only — bypasses Gatekeeper for unsigned apps)
-4. **System Settings → Privacy & Security → Accessibility** → add QuickSnip → toggle ON
-5. Click ⚡ in the menu bar → **Restart Monitoring**
+3. Open **Terminal** and run:
+   ```
+   xattr -cr /Applications/QuickSnip.app
+   ```
+   This removes the quarantine flag macOS puts on apps downloaded from the internet. You only do this once.
+4. Open QuickSnip normally from `/Applications`
+5. **System Settings → Privacy & Security → Accessibility** → click `+` → add QuickSnip → toggle ON
+6. Click ⚡ in the menu bar → **Restart Monitoring**
+
+> **Why the Terminal step?** QuickSnip isn't signed with an Apple Developer certificate yet (that's a $99/year program). Without it, macOS shows a "damaged" warning on downloaded apps. The `xattr -cr` command tells macOS you trust it. This is standard for open source Mac apps.
 
 ## Migrating from TextExpander
 

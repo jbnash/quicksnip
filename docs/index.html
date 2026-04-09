@@ -323,19 +323,25 @@
   <div class="steps">
     <div class="step">
       <div class="step-num">1</div>
-      <p>Download and open QuickSnip. It comes loaded with a starter set so you're useful immediately.</p>
+      <p>Download and unzip <strong>QuickSnip.zip</strong>. Move <strong>QuickSnip.app</strong> to your <strong>Applications</strong> folder.</p>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <p>Click <code>⚡ → Load Backup File…</code> and point it at your <code>.textexpbackup</code> file.</p>
+      <p><strong>One-time fix for macOS:</strong> Open Terminal (press ⌘Space, type Terminal) and run:<br/>
+      <code>xattr -cr /Applications/QuickSnip.app</code><br/>
+      Then open the app normally. This removes a security flag macOS puts on apps downloaded from the internet. You only do this once.</p>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <p>Grant Accessibility permission once in System Settings so QuickSnip can watch for your abbreviations.</p>
+      <p>Go to <strong>System Settings → Privacy &amp; Security → Accessibility</strong>, click <strong>+</strong>, add QuickSnip, and toggle it <strong>on</strong>. Then click ⚡ → Restart Monitoring.</p>
     </div>
     <div class="step">
       <div class="step-num">4</div>
-      <p>Type any abbreviation, anywhere. Done.</p>
+      <p>Already have snippets? Click <code>⚡ → Load Backup File…</code> and point it at your <code>.textexpbackup</code> file.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <p>Type any abbreviation, anywhere on your Mac. Done.</p>
     </div>
   </div>
 </section>
