@@ -1,12 +1,24 @@
 import Foundation
 
-struct Snippet {
-    let abbreviation: String
-    let label: String
-    let plainText: String
+struct Snippet: Codable {
+    var id: UUID
+    var abbreviation: String
+    var label: String
+    var plainText: String
     let richText: Data?
-    let type: Int          // 0 = plain, 1 = rich text, 2 = picture (skipped)
-    let abbreviationMode: Int  // 0 = case-insensitive, 2 = case-sensitive
+    var type: Int               // 0 = plain, 1 = rich text, 2 = picture (skipped)
+    var abbreviationMode: Int   // 0 = case-insensitive, 2 = case-sensitive
+
+    init(id: UUID = UUID(), abbreviation: String, label: String = "",
+         plainText: String, richText: Data? = nil, type: Int = 0, abbreviationMode: Int = 0) {
+        self.id = id
+        self.abbreviation = abbreviation
+        self.label = label
+        self.plainText = plainText
+        self.richText = richText
+        self.type = type
+        self.abbreviationMode = abbreviationMode
+    }
 
     var displayPreview: String {
         plainText
@@ -17,10 +29,34 @@ struct Snippet {
 
 class SnippetStore {
     private(set) var snippets: [Snippet] = []
-    private var caseInsensitiveIndex: [String: Snippet] = [:]  // lowercased abbrev → snippet
-    private var caseSensitiveIndex: [String: Snippet] = [:]    // exact abbrev → snippet
+    private var caseInsensitiveIndex: [String: Snippet] = [:]
+    private var caseSensitiveIndex:   [String: Snippet] = [:]
     private(set) var maxAbbrevLength: Int = 0
     private(set) var loadedURL: URL?
+
+    private static let saveKey = "savedSnippets"
+
+    init() {
+        loadSaved()
+    }
+
+    // MARK: - Persistence
+
+    func save() {
+        if let data = try? JSONEncoder().encode(snippets) {
+            UserDefaults.standard.set(data, forKey: Self.saveKey)
+        }
+    }
+
+    private func loadSaved() {
+        guard let data = UserDefaults.standard.data(forKey: Self.saveKey),
+              let saved = try? JSONDecoder().decode([Snippet].self, from: data) else { return }
+        snippets = saved
+        buildIndex()
+        print("QuickSnip: Loaded \(snippets.count) saved snippets")
+    }
+
+    // MARK: - Load from backup file
 
     func load(from url: URL) {
         do {
@@ -36,7 +72,7 @@ class SnippetStore {
             for raw in rawSnippets {
                 guard let abbrev = raw["abbreviation"] as? String, !abbrev.isEmpty else { continue }
                 let type = raw["snippetType"] as? Int ?? 0
-                guard type == 0 || type == 1 else { continue }  // skip pictures/scripts
+                guard type == 0 || type == 1 else { continue }
 
                 let snippet = Snippet(
                     abbreviation: abbrev,
@@ -52,16 +88,43 @@ class SnippetStore {
             snippets = loaded
             loadedURL = url
             buildIndex()
-            print("QuickSnip: Loaded \(snippets.count) snippets (max abbreviation length: \(maxAbbrevLength))")
+            save()
+            print("QuickSnip: Loaded \(snippets.count) snippets from backup (max abbreviation length: \(maxAbbrevLength))")
         } catch {
             print("QuickSnip: Error loading backup file: \(error)")
         }
     }
 
+    // MARK: - CRUD
+
+    func addSnippet(abbreviation: String, label: String, text: String) {
+        let snippet = Snippet(abbreviation: abbreviation, label: label, plainText: text)
+        snippets.insert(snippet, at: 0)
+        buildIndex()
+        save()
+    }
+
+    func updateSnippet(id: UUID, abbreviation: String, label: String, text: String) {
+        guard let idx = snippets.firstIndex(where: { $0.id == id }) else { return }
+        snippets[idx].abbreviation = abbreviation
+        snippets[idx].label = label
+        snippets[idx].plainText = text
+        buildIndex()
+        save()
+    }
+
+    func deleteSnippet(id: UUID) {
+        snippets.removeAll { $0.id == id }
+        buildIndex()
+        save()
+    }
+
+    // MARK: - Index
+
     private func buildIndex() {
         caseInsensitiveIndex = [:]
-        caseSensitiveIndex = [:]
-        maxAbbrevLength = 0
+        caseSensitiveIndex   = [:]
+        maxAbbrevLength      = 0
 
         for snippet in snippets {
             maxAbbrevLength = max(maxAbbrevLength, snippet.abbreviation.count)
@@ -79,17 +142,13 @@ class SnippetStore {
 
         // Case-sensitive pass
         for (abbrev, snippet) in caseSensitiveIndex {
-            if buffer.hasSuffix(abbrev) {
-                return snippet
-            }
+            if buffer.hasSuffix(abbrev) { return snippet }
         }
 
-        // Case-insensitive pass (compare lowercased buffer suffix)
+        // Case-insensitive pass
         let lowerBuffer = buffer.lowercased()
         for (abbrev, snippet) in caseInsensitiveIndex {
-            if lowerBuffer.hasSuffix(abbrev) {
-                return snippet
-            }
+            if lowerBuffer.hasSuffix(abbrev) { return snippet }
         }
 
         return nil

@@ -1,7 +1,5 @@
 import AppKit
 
-/// A simple snippet browser: searchable list showing abbreviation, label, and expansion preview.
-/// Double-clicking a row pastes that snippet wherever the user's cursor was.
 class ManagementWindowController: NSWindowController, NSTableViewDelegate, NSTableViewDataSource {
 
     private let store: SnippetStore
@@ -13,6 +11,15 @@ class ManagementWindowController: NSWindowController, NSTableViewDelegate, NSTab
     private var countLabel: NSTextField!
     private var hintLabel: NSTextField!
     private var filteredSnippets: [Snippet] = []
+
+    private var editButton: NSButton!
+    private var deleteButton: NSButton!
+
+    // Held during an active edit sheet
+    private var activeAbbrevField: NSTextField?
+    private var activeLabelField: NSTextField?
+    private var activeTextView: NSTextView?
+    private var activeEditingSnippet: Snippet?  // nil = new snippet
 
     init(store: SnippetStore, appDelegate: AppDelegate) {
         self.store = store
@@ -47,18 +54,69 @@ class ManagementWindowController: NSWindowController, NSTableViewDelegate, NSTab
         searchField.action = #selector(searchChanged)
         contentView.addSubview(searchField)
 
-        // --- Count + hint labels ---
+        // --- Hint + count labels ---
+        hintLabel = NSTextField(labelWithString: "Double-click a snippet to paste it at your cursor")
+        hintLabel.font = NSFont.systemFont(ofSize: 11)
+        hintLabel.textColor = .tertiaryLabelColor
+        hintLabel.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(hintLabel)
+
         countLabel = NSTextField(labelWithString: "")
         countLabel.font = NSFont.systemFont(ofSize: 11)
         countLabel.textColor = .secondaryLabelColor
         countLabel.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(countLabel)
 
-        hintLabel = NSTextField(labelWithString: "Double-click a snippet to paste it at your cursor")
-        hintLabel.font = NSFont.systemFont(ofSize: 11)
-        hintLabel.textColor = .tertiaryLabelColor
-        hintLabel.translatesAutoresizingMaskIntoConstraints = false
-        contentView.addSubview(hintLabel)
+        // --- Bottom button bar ---
+        let buttonBar = NSView()
+        buttonBar.translatesAutoresizingMaskIntoConstraints = false
+        contentView.addSubview(buttonBar)
+
+        let separator = NSBox()
+        separator.boxType = .separator
+        separator.translatesAutoresizingMaskIntoConstraints = false
+        buttonBar.addSubview(separator)
+
+        let addButton = NSButton(title: "+", target: self, action: #selector(addSnippetTapped))
+        addButton.bezelStyle = .regularSquare
+        addButton.font = NSFont.systemFont(ofSize: 16, weight: .light)
+        addButton.translatesAutoresizingMaskIntoConstraints = false
+        addButton.toolTip = "Add new snippet"
+        buttonBar.addSubview(addButton)
+
+        deleteButton = NSButton(title: "−", target: self, action: #selector(deleteSnippetTapped))
+        deleteButton.bezelStyle = .regularSquare
+        deleteButton.font = NSFont.systemFont(ofSize: 16, weight: .light)
+        deleteButton.translatesAutoresizingMaskIntoConstraints = false
+        deleteButton.isEnabled = false
+        deleteButton.toolTip = "Delete selected snippet"
+        buttonBar.addSubview(deleteButton)
+
+        editButton = NSButton(title: "Edit", target: self, action: #selector(editSnippetTapped))
+        editButton.bezelStyle = .rounded
+        editButton.translatesAutoresizingMaskIntoConstraints = false
+        editButton.isEnabled = false
+        editButton.toolTip = "Edit selected snippet"
+        buttonBar.addSubview(editButton)
+
+        NSLayoutConstraint.activate([
+            separator.topAnchor.constraint(equalTo: buttonBar.topAnchor),
+            separator.leadingAnchor.constraint(equalTo: buttonBar.leadingAnchor),
+            separator.trailingAnchor.constraint(equalTo: buttonBar.trailingAnchor),
+
+            addButton.leadingAnchor.constraint(equalTo: buttonBar.leadingAnchor, constant: 8),
+            addButton.centerYAnchor.constraint(equalTo: buttonBar.centerYAnchor, constant: 2),
+            addButton.widthAnchor.constraint(equalToConstant: 24),
+            addButton.heightAnchor.constraint(equalToConstant: 24),
+
+            deleteButton.leadingAnchor.constraint(equalTo: addButton.trailingAnchor, constant: 2),
+            deleteButton.centerYAnchor.constraint(equalTo: buttonBar.centerYAnchor, constant: 2),
+            deleteButton.widthAnchor.constraint(equalToConstant: 24),
+            deleteButton.heightAnchor.constraint(equalToConstant: 24),
+
+            editButton.trailingAnchor.constraint(equalTo: buttonBar.trailingAnchor, constant: -12),
+            editButton.centerYAnchor.constraint(equalTo: buttonBar.centerYAnchor, constant: 2),
+        ])
 
         // --- Scroll view + table ---
         let scrollView = NSScrollView()
@@ -103,7 +161,12 @@ class ManagementWindowController: NSWindowController, NSTableViewDelegate, NSTab
             scrollView.topAnchor.constraint(equalTo: hintLabel.bottomAnchor, constant: 4),
             scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: buttonBar.topAnchor),
+
+            buttonBar.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            buttonBar.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            buttonBar.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            buttonBar.heightAnchor.constraint(equalToConstant: 36),
         ])
 
         reload()
@@ -140,29 +203,223 @@ class ManagementWindowController: NSWindowController, NSTableViewDelegate, NSTab
         }
         countLabel?.stringValue = "\(filteredSnippets.count) of \(store.snippets.count) snippets"
         tableView?.reloadData()
+        updateButtonStates()
     }
 
-    // MARK: - Double-click to expand
+    private func updateButtonStates() {
+        let hasSelection = tableView != nil && tableView.selectedRow >= 0
+        editButton?.isEnabled = hasSelection
+        deleteButton?.isEnabled = hasSelection
+    }
+
+    // MARK: - Table selection
+
+    func tableViewSelectionDidChange(_ notification: Notification) {
+        updateButtonStates()
+    }
+
+    // MARK: - Double-click to paste
 
     @objc private func rowDoubleClicked() {
         let row = tableView.clickedRow
         guard row >= 0, row < filteredSnippets.count else { return }
         let snippet = filteredSnippets[row]
 
-        // Grab the app the user was in before opening this window
         let targetApp = appDelegate?.lastFrontApp
-
-        // Close this window so it doesn't interfere with focus
         window?.orderOut(nil)
 
-        // Give the target app time to regain focus, then paste
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             targetApp?.activate(options: .activateIgnoringOtherApps)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                // Expand with 0 deletions — we're injecting fresh, not replacing an abbreviation
                 self.expander.expand(snippet, abbreviationLength: 0)
             }
         }
+    }
+
+    // MARK: - CRUD actions
+
+    @objc private func addSnippetTapped() {
+        showEditSheet(snippet: nil)
+    }
+
+    @objc private func editSnippetTapped() {
+        let row = tableView.selectedRow
+        guard row >= 0, row < filteredSnippets.count else { return }
+        showEditSheet(snippet: filteredSnippets[row])
+    }
+
+    @objc private func deleteSnippetTapped() {
+        let row = tableView.selectedRow
+        guard row >= 0, row < filteredSnippets.count else { return }
+        let snippet = filteredSnippets[row]
+
+        let alert = NSAlert()
+        alert.messageText = "Delete \"\(snippet.abbreviation)\"?"
+        alert.informativeText = "This cannot be undone."
+        alert.addButton(withTitle: "Delete")
+        alert.addButton(withTitle: "Cancel")
+        alert.alertStyle = .warning
+        alert.buttons.first?.hasDestructiveAction = true
+
+        guard let mainWindow = window else { return }
+        alert.beginSheetModal(for: mainWindow) { response in
+            if response == .alertFirstButtonReturn {
+                self.store.deleteSnippet(id: snippet.id)
+                self.reload()
+            }
+        }
+    }
+
+    // MARK: - Edit sheet
+
+    private func showEditSheet(snippet: Snippet?) {
+        guard let mainWindow = window else { return }
+        activeEditingSnippet = snippet
+        let isNew = snippet == nil
+
+        let sheetWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 295),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        sheetWindow.title = isNew ? "New Snippet" : "Edit Snippet"
+
+        let content = sheetWindow.contentView!
+
+        func sectionLabel(_ text: String) -> NSTextField {
+            let l = NSTextField(labelWithString: text)
+            l.font = NSFont.systemFont(ofSize: 11, weight: .medium)
+            l.textColor = .secondaryLabelColor
+            l.translatesAutoresizingMaskIntoConstraints = false
+            return l
+        }
+
+        func inputField(placeholder: String, mono: Bool = false) -> NSTextField {
+            let f = NSTextField()
+            f.placeholderString = placeholder
+            f.font = mono
+                ? NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+                : NSFont.systemFont(ofSize: 13)
+            f.translatesAutoresizingMaskIntoConstraints = false
+            return f
+        }
+
+        let abbrevLabel = sectionLabel("ABBREVIATION")
+        let labelLabel  = sectionLabel("LABEL")
+        let textLabel   = sectionLabel("EXPANSION")
+
+        let abbrevField = inputField(placeholder: "e.g. tthanks", mono: true)
+        let labelField  = inputField(placeholder: "e.g. Thank you")
+
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.autohidesScrollers = true
+        scrollView.borderType = .bezelBorder
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        let textView = NSTextView()
+        textView.font = NSFont.systemFont(ofSize: 13)
+        textView.isRichText = false
+        textView.isEditable = true
+        textView.autoresizingMask = [.width]
+        textView.isVerticallyResizable = true
+        textView.textContainer?.widthTracksTextView = true
+        scrollView.documentView = textView
+
+        // Pre-fill from existing snippet
+        abbrevField.stringValue = snippet?.abbreviation ?? ""
+        labelField.stringValue  = snippet?.label ?? ""
+        textView.string         = snippet?.plainText ?? ""
+
+        let cancelBtn = NSButton(title: "Cancel", target: self, action: #selector(dismissSheet(_:)))
+        cancelBtn.bezelStyle = .rounded
+        cancelBtn.keyEquivalent = "\u{1b}"
+        cancelBtn.translatesAutoresizingMaskIntoConstraints = false
+
+        let saveBtn = NSButton(title: isNew ? "Add" : "Save", target: self, action: #selector(dismissSheet(_:)))
+        saveBtn.bezelStyle = .rounded
+        saveBtn.keyEquivalent = "\r"
+        saveBtn.translatesAutoresizingMaskIntoConstraints = false
+
+        for v in [abbrevLabel, labelLabel, textLabel, abbrevField, labelField,
+                  scrollView, cancelBtn, saveBtn] as [NSView] {
+            content.addSubview(v)
+        }
+
+        NSLayoutConstraint.activate([
+            abbrevLabel.topAnchor.constraint(equalTo: content.topAnchor, constant: 20),
+            abbrevLabel.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
+
+            abbrevField.topAnchor.constraint(equalTo: abbrevLabel.bottomAnchor, constant: 4),
+            abbrevField.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
+            abbrevField.widthAnchor.constraint(equalToConstant: 160),
+
+            labelLabel.topAnchor.constraint(equalTo: content.topAnchor, constant: 20),
+            labelLabel.leadingAnchor.constraint(equalTo: abbrevField.trailingAnchor, constant: 16),
+
+            labelField.topAnchor.constraint(equalTo: labelLabel.bottomAnchor, constant: 4),
+            labelField.leadingAnchor.constraint(equalTo: abbrevField.trailingAnchor, constant: 16),
+            labelField.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+
+            textLabel.topAnchor.constraint(equalTo: abbrevField.bottomAnchor, constant: 16),
+            textLabel.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
+
+            scrollView.topAnchor.constraint(equalTo: textLabel.bottomAnchor, constant: 4),
+            scrollView.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
+            scrollView.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+            scrollView.heightAnchor.constraint(equalToConstant: 120),
+
+            cancelBtn.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 16),
+            cancelBtn.trailingAnchor.constraint(equalTo: saveBtn.leadingAnchor, constant: -8),
+            cancelBtn.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -16),
+
+            saveBtn.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 16),
+            saveBtn.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
+            saveBtn.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -16),
+        ])
+
+        activeAbbrevField = abbrevField
+        activeLabelField  = labelField
+        activeTextView    = textView
+
+        mainWindow.beginSheet(sheetWindow) { [weak self] response in
+            guard let self = self, response == .OK else {
+                self?.clearActiveSheet()
+                return
+            }
+
+            let abbrev = self.activeAbbrevField?.stringValue.trimmingCharacters(in: .whitespaces) ?? ""
+            let lbl    = self.activeLabelField?.stringValue.trimmingCharacters(in: .whitespaces) ?? ""
+            let text   = self.activeTextView?.string ?? ""
+
+            guard !abbrev.isEmpty else {
+                self.clearActiveSheet()
+                return
+            }
+
+            if let existing = self.activeEditingSnippet {
+                self.store.updateSnippet(id: existing.id, abbreviation: abbrev, label: lbl, text: text)
+            } else {
+                self.store.addSnippet(abbreviation: abbrev, label: lbl, text: text)
+            }
+
+            self.clearActiveSheet()
+            self.reload()
+        }
+    }
+
+    @objc private func dismissSheet(_ sender: NSButton) {
+        guard let sheetWindow = sender.window else { return }
+        let isSave = sender.title == "Save" || sender.title == "Add"
+        window?.endSheet(sheetWindow, returnCode: isSave ? .OK : .cancel)
+    }
+
+    private func clearActiveSheet() {
+        activeAbbrevField    = nil
+        activeLabelField     = nil
+        activeTextView       = nil
+        activeEditingSnippet = nil
     }
 
     // MARK: - NSTableViewDataSource

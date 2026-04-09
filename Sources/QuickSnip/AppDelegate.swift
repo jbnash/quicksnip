@@ -65,6 +65,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Manage Snippets…", action: #selector(showManagement), keyEquivalent: "m"))
         menu.addItem(NSMenuItem(title: "Load Backup File…",  action: #selector(loadBackupFile),  keyEquivalent: "o"))
         menu.addItem(NSMenuItem(title: "Help…",             action: #selector(showHelp),         keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Give Feedback…",   action: #selector(giveFeedback),      keyEquivalent: ""))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit QuickSnip", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
@@ -77,7 +78,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Snippet loading
 
     private func loadSavedBackupOrPrompt() {
-        // Returning user — load their saved file
+        // Already loaded from persistent storage in SnippetStore.init() — don't overwrite edits
+        if !store.snippets.isEmpty {
+            refreshStatus()
+            return
+        }
+        // Migration: user had a backup file path saved from a previous version
         if let path = UserDefaults.standard.string(forKey: "backupFilePath"),
            FileManager.default.fileExists(atPath: path) {
             store.load(from: URL(fileURLWithPath: path))
@@ -106,7 +112,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         store.load(from: url)
-        UserDefaults.standard.set(url.path, forKey: "backupFilePath")
         refreshStatus()
         managementController?.reload()
     }
@@ -140,6 +145,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.isEnabled.toggle()
         enableMenuItem?.state = monitor.isEnabled ? .on : .off
         refreshStatus()
+    }
+
+    @objc private func giveFeedback() {
+        NSWorkspace.shared.open(URL(string: "https://tally.so/r/dWDaXq")!)
     }
 
     @objc private func showHelp() {
