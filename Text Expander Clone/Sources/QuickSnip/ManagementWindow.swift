@@ -400,13 +400,22 @@ class SnippetEditSheet: NSObject {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         textView = NSTextView()
-        textView.string = snippet.plainText
         textView.font   = NSFont.systemFont(ofSize: 13)
         textView.isRichText  = false
         textView.isEditable  = true
         textView.allowsUndo  = true
         textView.textContainerInset = NSSize(width: 4, height: 4)
+        // Required for text to display inside a scroll view
+        textView.minSize = NSSize(width: 0, height: 0)
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.autoresizingMask = [.width]
+        textView.textContainer?.containerSize = NSSize(width: 440, height: CGFloat.greatestFiniteMagnitude)
+        textView.textContainer?.widthTracksTextView = true
         scrollView.documentView = textView
+        // Set string after wiring up the container so layout is correct
+        textView.string = snippet.plainText
 
         // Buttons
         let cancelButton = NSButton(title: "Cancel", target: self, action: #selector(cancel))
