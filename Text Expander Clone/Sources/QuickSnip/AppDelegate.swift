@@ -17,6 +17,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Launch
 
+    // If the menu bar icon is hidden (e.g. behind the notch), the user can
+    // re-open the app from Finder/Applications to get to the management window.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showManagement()
+        return true
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildMenuBar()
         loadSavedBackupOrPrompt()
