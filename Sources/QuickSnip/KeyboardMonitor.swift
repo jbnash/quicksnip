@@ -19,6 +19,17 @@ class KeyboardMonitor {
     private static let tapCallback: CGEventTapCallBack = { proxy, type, event, refcon in
         guard let refcon = refcon else { return Unmanaged.passRetained(event) }
         let monitor = Unmanaged<KeyboardMonitor>.fromOpaque(refcon).takeUnretainedValue()
+
+        // macOS disables event taps that are slow (e.g. during clipboard operations).
+        // When disabled the tap becomes listen-only — returning nil no longer suppresses events.
+        // Re-enable immediately so suppression keeps working for every expansion.
+        if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+            if let tap = monitor.eventTap {
+                CGEvent.tapEnable(tap: tap, enable: true)
+            }
+            return nil
+        }
+
         return monitor.handle(event: event)
     }
 
@@ -137,10 +148,12 @@ class KeyboardMonitor {
         if let snippet = store.find(in: buffer) {
             let abbrevLen = snippet.abbreviation.count
             buffer = ""
-            // Let the keystroke land first, then expand on the next run-loop tick
+            // Suppress the final keystroke so it never reaches the app.
+            // Delete only abbrevLen-1 chars (the rest of the abbreviation already landed).
             DispatchQueue.main.async {
-                self.expander.expand(snippet, abbreviationLength: abbrevLen)
+                self.expander.expand(snippet, abbreviationLength: abbrevLen - 1)
             }
+            return nil
         }
 
         return Unmanaged.passRetained(event)

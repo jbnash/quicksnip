@@ -60,7 +60,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         enableMenuItem = enableItem
         menu.addItem(enableItem)
 
-        menu.addItem(NSMenuItem(title: "Restart Monitoring", action: #selector(restartMonitoring), keyEquivalent: "r"))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Manage Snippets…", action: #selector(showManagement), keyEquivalent: "m"))
         menu.addItem(NSMenuItem(title: "Load Backup File…",  action: #selector(loadBackupFile),  keyEquivalent: "o"))
@@ -78,12 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Snippet loading
 
     private func loadSavedBackupOrPrompt() {
-        // Already loaded from persistent storage in SnippetStore.init() — don't overwrite edits
-        if !store.snippets.isEmpty {
-            refreshStatus()
-            return
-        }
-        // Migration: user had a backup file path saved from a previous version
+        // Returning user — load their saved file
         if let path = UserDefaults.standard.string(forKey: "backupFilePath"),
            FileManager.default.fileExists(atPath: path) {
             store.load(from: URL(fileURLWithPath: path))
@@ -112,6 +106,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         store.load(from: url)
+        UserDefaults.standard.set(url.path, forKey: "backupFilePath")
         refreshStatus()
         managementController?.reload()
     }
@@ -120,12 +115,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func startMonitor() {
         monitor = KeyboardMonitor(store: store)
-        monitor?.start()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.refreshStatus() }
-    }
-
-    @objc private func restartMonitoring() {
-        monitor?.stop()
         monitor?.start()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { self.refreshStatus() }
     }

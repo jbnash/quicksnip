@@ -172,7 +172,7 @@ class HelpWindowController: NSWindowController {
         // ── Troubleshooting ──
         heading("Troubleshooting")
         body("⚠️ No Accessibility access  — QuickSnip needs this permission to watch keystrokes.")
-        body("  Fix: System Settings → Privacy & Security → Accessibility → add QuickSnip → toggle ON → then  ⚡ → Restart Monitoring.")
+        body("  Fix: System Settings → Privacy & Security → Accessibility → add QuickSnip → toggle ON → then quit and reopen QuickSnip.")
         body("")
         body("Snippets not expanding  — Check that the menu shows  ✓ Active  and  Enabled  is checked.")
         body("")
