@@ -1,0 +1,5 @@
+
+# claude code local config + build output
+.claude/
+.build/
+QuickSnip.app/
